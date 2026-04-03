@@ -17,8 +17,7 @@ subprojects {
     }
 
     configure<LibraryExtension> {
-        // TODO: Change to your package name
-        namespace = "com.github.yournamehere"
+        namespace = "ing.frolick.miaaaa0a"
         compileSdk = 36
 
         defaultConfig {
@@ -37,11 +36,9 @@ subprojects {
     }
 
     configure<AliucordExtension> {
-        // TODO: Change to your name and user ID
-        author("yournamehere", 0L, hyperlink = true)
+        author("miaaaa0a", 435750383491481602L, hyperlink = true)
 
-        // TODO: Change to your repository
-        github("https://github.com/Aliucord/plugins-template")
+        github("https://git.gay/miaaaa0a/aliucord-plugins")
     }
 
     configure<KtlintExtension> {
