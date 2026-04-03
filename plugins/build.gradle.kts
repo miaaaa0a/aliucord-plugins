@@ -38,7 +38,7 @@ subprojects {
     configure<AliucordExtension> {
         author("miaaaa0a", 435750383491481602L, hyperlink = true)
 
-        github("https://git.gay/miaaaa0a/aliucord-plugins")
+        github("https://github.com/miaaaa0a/aliucord-plugins")
     }
 
     configure<KtlintExtension> {
