@@ -5,6 +5,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import com.aliucord.Logger
 import com.lytefast.flexinput.R
 import com.aliucord.Utils
 
@@ -12,7 +13,12 @@ import com.aliucord.annotations.AliucordPlugin
 import com.aliucord.api.GatewayAPI
 import com.aliucord.entities.Plugin
 import com.aliucord.patcher.*
+import com.aliucord.wrappers.ChannelWrapper.Companion.isDM
+import com.aliucord.wrappers.users.globalName
+import com.discord.api.channel.Channel
+import com.discord.api.channel.ChannelUtils
 import com.discord.api.channel.`ChannelUtils$getDisplayName$1`
+import com.discord.api.channel.ChannelUtils.d as getDisplayNameOrDefault
 import com.discord.models.user.CoreUser
 import com.discord.api.user.User
 import com.discord.utilities.color.ColorCompat
@@ -37,10 +43,13 @@ class NativeFriendNicknames : Plugin() {
         }
 
         // this gets globalName from a different api, so I have to patch it out manually
-        Patcher.addPatch(`ChannelUtils$getDisplayName$1`::class.java.getDeclaredMethod("invoke", Any::class.java), Hook {
-            val nickname = Stores.friendNicknames.getNickname((it.args[0] as User).id) ?: return@Hook
-            it.result = nickname
+        // using InsteadHook because with regular Hook it sometimes resets back to globalName
+        Patcher.addPatch(`ChannelUtils$getDisplayName$1`::class.java.getDeclaredMethod("invoke", Any::class.java),
+            InsteadHook {
+            val nickname = Stores.friendNicknames.getNickname((it.args[0] as User).id) ?: (it.args[0] as User).globalName
+            return@InsteadHook nickname
         })
+        //Logger().info("METHODS: ${`ChannelUtils$getDisplayName$1`::class.java.declaredMethods.joinToString(",")}")
 
         patcher.patch(
             UserActionsDialog::class.java,

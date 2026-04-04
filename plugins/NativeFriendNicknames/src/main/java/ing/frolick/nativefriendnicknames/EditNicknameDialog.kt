@@ -7,6 +7,8 @@ import com.aliucord.Utils
 import com.aliucord.fragments.InputDialog
 import com.aliucord.wrappers.users.globalName
 import com.discord.models.user.User
+import com.discord.stores.StoreStream
+import com.discord.stores.updates.ObservationDeck
 
 data class UpdateRelationshipRequest(
     val nickname: String?
@@ -34,7 +36,19 @@ class EditNicknameDialog(private val user: User?) : InputDialog() {
                         .newDiscordRNRequest("/users/@me/relationships/${user?.id}", "PATCH")
                         .executeWithJson(req)
                     // why does this not throw the usual 200 success code dieee discord
-                    if (res.statusCode != 204) {
+                    if (res.statusCode == 204) {
+                        // this is supposed to instantly update everything that uses User.globalName
+                        // but it doesn't :(
+                        /*StoreStream.`access$getDispatcher$p`(StoreStream.getPresences().stream).schedule {
+                            val storeUsers = StoreStream.Companion!!.users
+                            val getUsersUpdate =
+                                storeUsers::class.java.getDeclaredMethod("access\$getUsersUpdate\$cp").apply {
+                                    isAccessible = true
+                                }
+                            val usersUpdate = getUsersUpdate.invoke(null)
+                            storeUsers.markChanged(usersUpdate as ObservationDeck.UpdateSource?)
+                        }*/
+                    } else {
                         Utils.mainThread.post {
                             Utils.showToast("Error ${res.statusCode} while changing ${user?.username}'s nickname!", true)
                         }
