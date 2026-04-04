@@ -1,6 +1,12 @@
 package ing.frolick.nativefriendnicknames
 
 import android.content.Context
+import android.view.View
+import android.widget.LinearLayout
+import android.widget.TextView
+import androidx.core.content.ContextCompat
+import com.lytefast.flexinput.R
+import com.aliucord.Utils
 
 import com.aliucord.annotations.AliucordPlugin
 import com.aliucord.api.GatewayAPI
@@ -9,6 +15,9 @@ import com.aliucord.patcher.*
 import com.discord.api.channel.`ChannelUtils$getDisplayName$1`
 import com.discord.models.user.CoreUser
 import com.discord.api.user.User
+import com.discord.utilities.color.ColorCompat
+import b.a.a.d.a as UserActionsDialog
+import com.discord.stores.StoreStream
 
 internal class Relationship(val id: Long, val nickname: String?)
 internal class Ready(val relationships: List<Relationship>)
@@ -32,6 +41,44 @@ class NativeFriendNicknames : Plugin() {
             val nickname = Stores.friendNicknames.getNickname((it.args[0] as User).id) ?: return@Hook
             it.result = nickname
         })
+
+        patcher.patch(
+            UserActionsDialog::class.java,
+            "onViewBound",
+            arrayOf(View::class.java),
+            Hook { param ->
+                val dialog = param.thisObject as UserActionsDialog
+                val root = param.args[0] as LinearLayout
+
+                val userId = dialog.argumentsOrDefault
+                    .getLong("com.discord.intent.extra.EXTRA_USER_ID", 0L)
+                val user = StoreStream.Companion!!.users.getUsers(listOf(userId), false)[userId]
+                // no friend = no option
+                if (!Stores.friendNicknames.data.containsKey(userId)) return@Hook
+
+                val ctx = root.context
+                val newItem = TextView(ctx, null, 0, R.i.UiKit_ListItem_Icon).apply {
+                    text = "Edit Friend Nickname"
+                    setOnClickListener {
+                        dialog.dismiss()
+                        EditNicknameDialog(user).show(Utils.appActivity.supportFragmentManager, "EditNickname")
+                    }
+                    setCompoundDrawablesWithIntrinsicBounds(
+                        ContextCompat
+                            .getDrawable(ctx, R.e.ic_edit_24dp)!!
+                            .mutate()
+                            .apply {
+                                setTint(ColorCompat.getThemedColor(ctx, R.b.colorInteractiveNormal))
+                            },
+                        null,
+                        null,
+                        null
+                    )
+                }
+
+                root.addView(newItem)
+            }
+        )
     }
 
     override fun stop(context: Context) {
@@ -56,5 +103,5 @@ class StoreRelationshipNick(var data: MutableMap<Long, String?> = mutableMapOf<L
             data.remove(event.id)
         }
     }
-    fun getNickname(id: Long): String? = data[id]
+    fun getNickname(id: Long?): String? = data[id]
 }
