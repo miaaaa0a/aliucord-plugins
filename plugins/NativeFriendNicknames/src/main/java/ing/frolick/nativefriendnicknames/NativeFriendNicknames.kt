@@ -5,25 +5,21 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
-import com.aliucord.Logger
 import com.lytefast.flexinput.R
-import com.aliucord.Utils
 
 import com.aliucord.annotations.AliucordPlugin
 import com.aliucord.api.GatewayAPI
 import com.aliucord.entities.Plugin
 import com.aliucord.patcher.*
-import com.aliucord.wrappers.ChannelWrapper.Companion.isDM
 import com.aliucord.wrappers.users.globalName
-import com.discord.api.channel.Channel
-import com.discord.api.channel.ChannelUtils
 import com.discord.api.channel.`ChannelUtils$getDisplayName$1`
-import com.discord.api.channel.ChannelUtils.d as getDisplayNameOrDefault
 import com.discord.models.user.CoreUser
 import com.discord.api.user.User
 import com.discord.utilities.color.ColorCompat
 import b.a.a.d.a as UserActionsDialog
 import com.discord.stores.StoreStream
+import com.aliucord.Logger
+import com.aliucord.Utils
 
 internal class Relationship(val id: Long, val nickname: String?)
 internal class Ready(val relationships: List<Relationship>)
@@ -77,7 +73,7 @@ class NativeFriendNicknames : Plugin() {
                             .getDrawable(ctx, R.e.ic_edit_24dp)!!
                             .mutate()
                             .apply {
-                                setTint(ColorCompat.getThemedColor(ctx, R.b.colorInteractiveNormal))
+                                setTint(ColorCompat.getThemedColor(ctx, R.b.colorTextNormal))
                             },
                         null,
                         null,
