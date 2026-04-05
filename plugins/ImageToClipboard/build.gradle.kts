@@ -1,12 +1,13 @@
-version = "1.0.1"
+version = "1.0.2"
 description = "add an option to copy images to your clipboard"
 
 aliucord {
     // Changelog of your plugin
     changelog.set(
         """
-        # 1.0.1
-        * display copy button only on images
+        # 1.0.2
+        * add removal of previously copied images (still have to keep the current one)
+        * fix detection of image files
         """.trimIndent(),
     )
     deploy.set(true)
