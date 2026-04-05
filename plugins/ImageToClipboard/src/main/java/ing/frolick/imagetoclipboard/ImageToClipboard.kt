@@ -117,10 +117,10 @@ class ImageToClipboard : Plugin() {
                 }
                 if (appBarLayout.findViewWithTag<View>("copy_btn") == null) {
                     // non image begone!!!
-                    if (imageUrl.endsWith("png") ||
-                        imageUrl.endsWith("jpg") ||
-                        imageUrl.endsWith("jpeg") ||
-                        imageUrl.endsWith("webp")) {
+                    if (imageUrl.contains(".png") ||
+                        imageUrl.contains(".jpg") ||
+                        imageUrl.contains(".jpeg") ||
+                        imageUrl.contains(".webp")) {
                             copyBtn.tag = "copy_btn"
                             menuMediaGroup.addView(copyBtn)
                     }
