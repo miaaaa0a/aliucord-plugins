@@ -35,6 +35,8 @@ import java.net.URL
 @SuppressWarnings("unused")
 @AliucordPlugin
 class ImageToClipboard : Plugin() {
+    private var lastClipUri: Uri? = null
+
     @SuppressLint("RestrictedApi")
     override fun start(context: Context) {
         patcher.patch(
@@ -69,6 +71,11 @@ class ImageToClipboard : Plugin() {
 
                         // this is pure magic don't ask
                         Thread {
+                            // remove last copied image
+                            lastClipUri?.let { old ->
+                                try { context.contentResolver.delete(old, null, null) } catch (_: Exception) {}
+                            }
+
                             try {
                                 val bitmap = android.graphics.BitmapFactory.decodeStream(
                                     URL(imageUrl).openStream()
@@ -98,6 +105,7 @@ class ImageToClipboard : Plugin() {
                                 val clip = ClipData.newUri(resolver, "image", uri)
                                 (appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
                                     .setPrimaryClip(clip)
+                                lastClipUri = uri
 
                                 Utils.mainThread.post { Utils.showToast("copied the image!", false) }
                             } catch (e: Exception) {
