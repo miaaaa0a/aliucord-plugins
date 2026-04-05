@@ -40,12 +40,13 @@ class ImageToClipboard : Plugin() {
         patcher.patch(
             WidgetMedia::class.java, "onViewBoundOrOnResume", arrayOf(),
             Hook {
-                Logger().info("called")
                 val widgetMedia = it.thisObject as WidgetMedia
                 val binding = WidgetMedia.`access$getBinding$p`(widgetMedia)
                 val field = WidgetMediaBinding::class.java.getDeclaredField("b").apply { isAccessible = true }
                 val appBarLayout = field.get(binding) as AppBarLayout
                 val menuMediaGroup = appBarLayout.findViewById<TextView>("menu_media_download").parent as ViewGroup
+                val imageUrl = (widgetMedia as AppFragment).mostRecentIntent
+                    .getStringExtra("INTENT_MEDIA_URL") ?: return@Hook
 
                 //Logger().info("CHILDREN COUNT: ${actionBar.childCount}")
                 //val menuMediaGroup = actionBar.getChildAt(0) as ViewGroup
@@ -64,9 +65,6 @@ class ImageToClipboard : Plugin() {
                         null,
                     )
                     setOnClickListener {
-                        val imageUrl = (widgetMedia as AppFragment).mostRecentIntent
-                            .getStringExtra("INTENT_MEDIA_URL") ?: return@setOnClickListener
-
                         Utils.showToast("copying...", false)
 
                         // this is pure magic don't ask
@@ -110,8 +108,14 @@ class ImageToClipboard : Plugin() {
                     }
                 }
                 if (appBarLayout.findViewWithTag<View>("copy_btn") == null) {
-                    copyBtn.tag = "copy_btn"
-                    menuMediaGroup.addView(copyBtn)
+                    // non image begone!!!
+                    if (imageUrl.endsWith("png") ||
+                        imageUrl.endsWith("jpg") ||
+                        imageUrl.endsWith("jpeg") ||
+                        imageUrl.endsWith("webp")) {
+                            copyBtn.tag = "copy_btn"
+                            menuMediaGroup.addView(copyBtn)
+                    }
                 }
             },
         )
