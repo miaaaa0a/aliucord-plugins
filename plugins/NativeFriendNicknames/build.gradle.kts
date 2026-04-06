@@ -1,12 +1,12 @@
-version = "1.1.2"
+version = "1.1.3"
 description = "a plugin that backports the friend nickname feature"
 
 aliucord {
     // Changelog of your plugin
     changelog.set(
         """
-        # 1.1.2
-        * fixed icon color in user action dialog
+        # 1.1.3
+        * fix displaying in dm list (?)
         """.trimIndent(),
     )
     deploy.set(true)
