@@ -69,7 +69,7 @@ class ImageToClipboard : Plugin() {
                     setOnClickListener {
                         Utils.showToast("copying...", false)
 
-                        Thread {
+                        Utils.threadPool.execute {
                             try {
                                 val stream = URL(imageUrl).openStream()
                                 // stuoid jpgs .
@@ -97,10 +97,10 @@ class ImageToClipboard : Plugin() {
 
                                 Utils.mainThread.post { Utils.showToast("copied the image!", false) }
                             } catch (e: Exception) {
-                                Logger().error("itc error: ${e.message}", e)
+                                logger.error("itc error: ${e.message}", e)
                                 Utils.mainThread.post { Utils.showToast("failed to copy >.<", false) }
                             }
-                        }.start()
+                        }
                     }
                 }
                 if (appBarLayout.findViewWithTag<View>("copy_btn") == null) {
