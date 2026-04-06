@@ -31,6 +31,9 @@ import java.net.URL
 @SuppressWarnings("unused")
 @AliucordPlugin
 class ImageToClipboard : Plugin() {
+    // https://stackoverflow.com/questions/14473180/regex-to-get-a-filename-from-a-url#comment115606945_26253039
+    var urlRegex = Regex("[^/\\\\&?#]+\\.\\w{3,4}(?=([?&#].*$|$))")
+
     @SuppressLint("RestrictedApi")
     override fun start(context: Context) {
         patcher.patch(
@@ -41,8 +44,11 @@ class ImageToClipboard : Plugin() {
                 val field = WidgetMediaBinding::class.java.getDeclaredField("b").apply { isAccessible = true }
                 val appBarLayout = field.get(binding) as AppBarLayout
                 val menuMediaGroup = appBarLayout.findViewById<TextView>("menu_media_download").parent as ViewGroup
+
                 val imageUrl = (widgetMedia as AppFragment).mostRecentIntent
                     .getStringExtra("INTENT_MEDIA_URL") ?: return@Hook
+                val fileName = urlRegex.find(imageUrl, 0)?.value
+                val fileExt = fileName?.split('.')?.last()
 
                 //Logger().info("CHILDREN COUNT: ${actionBar.childCount}")
                 //val menuMediaGroup = actionBar.getChildAt(0) as ViewGroup
@@ -66,10 +72,16 @@ class ImageToClipboard : Plugin() {
                         Thread {
                             try {
                                 val stream = URL(imageUrl).openStream()
+                                // stuoid jpgs .
+                                val mimeType = when(fileExt) {
+                                    ".jpg" -> "image/jpeg"
+                                    else -> "image/$fileExt"
+                                }
+
                                 // context.filesDir is /data/data/com.aliucord/files, we are saving the image there
                                 // in theory it'd be better to use context.cacheDir, but discord doesn't expose that
                                 // in file_paths.xml, so it's not usable
-                                val file = File(context.filesDir, "clipboard_tmp.jpg")
+                                val file = File(context.filesDir, "clipboard_tmp.$fileExt")
                                 file.outputStream().use { out -> stream.copyTo(out) }
                                 val uri = FileProvider.getUriForFile(
                                     appContext,
@@ -77,7 +89,7 @@ class ImageToClipboard : Plugin() {
                                     file
                                 )
                                 val clip = ClipData(
-                                    ClipDescription("image", arrayOf("image/jpeg")),
+                                    ClipDescription("image", arrayOf(mimeType)),
                                     ClipData.Item(uri)
                                 )
                                 (appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
@@ -93,10 +105,12 @@ class ImageToClipboard : Plugin() {
                 }
                 if (appBarLayout.findViewWithTag<View>("copy_btn") == null) {
                     // non image begone!!!
-                    if (imageUrl.contains(".png") ||
-                        imageUrl.contains(".jpg") ||
-                        imageUrl.contains(".jpeg") ||
-                        imageUrl.contains(".webp")) {
+                    if (fileExt == "png" ||
+                        fileExt == "jpg" ||
+                        fileExt == "jpeg" ||
+                        fileExt == "webp" ||
+                        fileExt == "gif" ||
+                        fileExt == "apng") {
                             copyBtn.tag = "copy_btn"
                             menuMediaGroup.addView(copyBtn)
                     }
