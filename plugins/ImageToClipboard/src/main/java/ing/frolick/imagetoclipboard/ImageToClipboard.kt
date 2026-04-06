@@ -77,9 +77,7 @@ class ImageToClipboard : Plugin() {
                             }
 
                             try {
-                                val bitmap = android.graphics.BitmapFactory.decodeStream(
-                                    URL(imageUrl).openStream()
-                                )
+                                val stream = URL(imageUrl).openStream()
                                 val resolver = context.contentResolver
 
                                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -90,7 +88,7 @@ class ImageToClipboard : Plugin() {
                                     }
                                     val imgUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)!!
                                     resolver.openOutputStream(imgUri)?.use { out ->
-                                        bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+                                        stream.copyTo(out)
                                     }
                                     resolver.update(imgUri, ContentValues().apply {
                                         put(MediaStore.Images.Media.IS_PENDING, 0)
@@ -98,7 +96,7 @@ class ImageToClipboard : Plugin() {
                                     imgUri
                                 } else {
                                     val file = File(context.externalCacheDir, "clipboard_tmp.jpg")
-                                    file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 95, it) }
+                                    file.outputStream().use { out -> stream.copyTo(out) }
                                     Uri.fromFile(file)
                                 }
 
