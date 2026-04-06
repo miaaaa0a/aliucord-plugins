@@ -18,7 +18,6 @@ import com.discord.api.user.User
 import com.discord.utilities.color.ColorCompat
 import b.a.a.d.a as UserActionsDialog
 import com.discord.stores.StoreStream
-import com.aliucord.Logger
 import com.aliucord.Utils
 
 internal class Relationship(val id: Long, val nickname: String?)
@@ -33,18 +32,16 @@ class NativeFriendNicknames : Plugin() {
     override fun start(context: Context) {
         Stores.friendNicknames.setup()
 
-        patcher.after<CoreUser>("getGlobalName") {
-            val nickname = Stores.friendNicknames.getNickname(this.id) ?: return@after
+        patcher.before<CoreUser>("getGlobalName") {
+            val nickname = Stores.friendNicknames.getNickname(this.id) ?: return@before
             it.result = nickname
         }
 
         // this gets globalName from a different api, so I have to patch it out manually
-        // using InsteadHook because with regular Hook it sometimes resets back to globalName
-        Patcher.addPatch(`ChannelUtils$getDisplayName$1`::class.java.getDeclaredMethod("invoke", Any::class.java),
-            InsteadHook {
+        patcher.before<`ChannelUtils$getDisplayName$1`>("invoke", Any::class.java) {
             val nickname = Stores.friendNicknames.getNickname((it.args[0] as User).id) ?: (it.args[0] as User).globalName
-            return@InsteadHook nickname
-        })
+            it.result = nickname
+        }
         //Logger().info("METHODS: ${`ChannelUtils$getDisplayName$1`::class.java.declaredMethods.joinToString(",")}")
 
         patcher.patch(
