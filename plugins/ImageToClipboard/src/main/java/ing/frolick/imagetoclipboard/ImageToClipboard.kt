@@ -2,17 +2,14 @@ package ing.frolick.imagetoclipboard
 
 import android.annotation.SuppressLint
 import android.content.ClipData
+import android.content.ClipDescription
 import android.content.ClipboardManager
-import android.content.ContentValues
 import android.content.Context
-import android.graphics.Bitmap
-import android.net.Uri
-import android.os.Build
-import android.provider.MediaStore
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 
 import com.aliucord.Logger
 import com.aliucord.Utils
@@ -31,12 +28,9 @@ import com.lytefast.flexinput.R
 import java.io.File
 import java.net.URL
 
-
 @SuppressWarnings("unused")
 @AliucordPlugin
 class ImageToClipboard : Plugin() {
-    private var lastClipUri: Uri? = null
-
     @SuppressLint("RestrictedApi")
     override fun start(context: Context) {
         patcher.patch(
@@ -69,41 +63,25 @@ class ImageToClipboard : Plugin() {
                     setOnClickListener {
                         Utils.showToast("copying...", false)
 
-                        // this is pure magic don't ask
                         Thread {
-                            // remove last copied image
-                            lastClipUri?.let { old ->
-                                try { context.contentResolver.delete(old, null, null) } catch (_: Exception) {}
-                            }
-
                             try {
                                 val stream = URL(imageUrl).openStream()
-                                val resolver = context.contentResolver
-
-                                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                                    val values = ContentValues().apply {
-                                        put(MediaStore.Images.Media.DISPLAY_NAME, "clipboard_tmp_${System.currentTimeMillis()}.jpg")
-                                        put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
-                                        put(MediaStore.Images.Media.IS_PENDING, 1)
-                                    }
-                                    val imgUri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)!!
-                                    resolver.openOutputStream(imgUri)?.use { out ->
-                                        stream.copyTo(out)
-                                    }
-                                    resolver.update(imgUri, ContentValues().apply {
-                                        put(MediaStore.Images.Media.IS_PENDING, 0)
-                                    }, null, null)
-                                    imgUri
-                                } else {
-                                    val file = File(context.externalCacheDir, "clipboard_tmp.jpg")
-                                    file.outputStream().use { out -> stream.copyTo(out) }
-                                    Uri.fromFile(file)
-                                }
-
-                                val clip = ClipData.newUri(resolver, "image", uri)
+                                // context.filesDir is /data/data/com.aliucord/files, we are saving the image there
+                                // in theory it'd be better to use context.cacheDir, but discord doesn't expose that
+                                // in file_paths.xml, so it's not usable
+                                val file = File(context.filesDir, "clipboard_tmp.jpg")
+                                file.outputStream().use { out -> stream.copyTo(out) }
+                                val uri = FileProvider.getUriForFile(
+                                    appContext,
+                                    "com.aliucord.file-provider",
+                                    file
+                                )
+                                val clip = ClipData(
+                                    ClipDescription("image", arrayOf("image/jpeg")),
+                                    ClipData.Item(uri)
+                                )
                                 (appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
                                     .setPrimaryClip(clip)
-                                lastClipUri = uri
 
                                 Utils.mainThread.post { Utils.showToast("copied the image!", false) }
                             } catch (e: Exception) {
