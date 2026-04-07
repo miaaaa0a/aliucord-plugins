@@ -1,12 +1,14 @@
-version = "1.1.3"
+version = "1.1.4"
 description = "a plugin that backports the friend nickname feature"
 
 aliucord {
     // Changelog of your plugin
     changelog.set(
         """
-        # 1.1.3
-        * fix displaying in dm list (?)
+        # 1.1.4
+        * fixed null appearing on deleted accounts and some bots
+        * fixed the edit nickname dialog sometimes not appearing
+        * finally changed the pencil icon in the user actions dialog to be the right color
         """.trimIndent(),
     )
     deploy.set(true)
