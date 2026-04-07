@@ -27,19 +27,19 @@ object Stores {
 }
 
 @SuppressWarnings("unused")
-@AliucordPlugin
+@AliucordPlugin(requiresRestart = true)
 class NativeFriendNicknames : Plugin() {
     override fun start(context: Context) {
         Stores.friendNicknames.setup()
 
         patcher.before<CoreUser>("getGlobalName") {
-            val nickname = Stores.friendNicknames.getNickname(this.id) ?: return@before
+            val nickname = Stores.friendNicknames.getNickname(this.id) ?: this.globalName
             it.result = nickname
         }
 
         // this gets globalName from a different api, so I have to patch it out manually
         patcher.before<`ChannelUtils$getDisplayName$1`>("invoke", Any::class.java) {
-            val nickname = Stores.friendNicknames.getNickname((it.args[0] as User).id) ?: (it.args[0] as User).globalName
+            val nickname = Stores.friendNicknames.getNickname((it.args[0] as User).id) ?: (it.args[0] as User).globalName ?: (it.args[0] as User).username
             it.result = nickname
         }
         //Logger().info("METHODS: ${`ChannelUtils$getDisplayName$1`::class.java.declaredMethods.joinToString(",")}")
@@ -48,7 +48,7 @@ class NativeFriendNicknames : Plugin() {
             UserActionsDialog::class.java,
             "onViewBound",
             arrayOf(View::class.java),
-            Hook { param ->
+            PreHook { param ->
                 val dialog = param.thisObject as UserActionsDialog
                 val root = param.args[0] as LinearLayout
 
@@ -56,21 +56,21 @@ class NativeFriendNicknames : Plugin() {
                     .getLong("com.discord.intent.extra.EXTRA_USER_ID", 0L)
                 val user = StoreStream.Companion!!.users.getUsers(listOf(userId), false)[userId]
                 // no friend = no option
-                if (!Stores.friendNicknames.data.containsKey(userId)) return@Hook
+                if (!Stores.friendNicknames.data.containsKey(userId)) return@PreHook
 
                 val ctx = root.context
                 val newItem = TextView(ctx, null, 0, R.i.UiKit_ListItem_Icon).apply {
                     text = "Edit Friend Nickname"
                     setOnClickListener {
                         dialog.dismiss()
-                        EditNicknameDialog(user).show(Utils.appActivity.supportFragmentManager, "EditNickname")
+                        EditNicknameDialog(user).show(dialog.parentFragmentManager, "EditNickname")
                     }
                     setCompoundDrawablesWithIntrinsicBounds(
                         ContextCompat
                             .getDrawable(ctx, R.e.ic_edit_24dp)!!
                             .mutate()
                             .apply {
-                                setTint(ColorCompat.getThemedColor(ctx, R.b.colorTextNormal))
+                                setTint(ColorCompat.getThemedColor(ctx, R.b.colorChannelIcon))
                             },
                         null,
                         null,
