@@ -14,7 +14,7 @@ data class UpdateRelationshipRequest(
     val nickname: String?
 )
 
-class EditNicknameDialog(private val user: User?) : InputDialog() {
+class EditNicknameDialog(private val user: User) : InputDialog() {
     override fun onViewBound(view: View) {
         setTitle("Edit Friend Nickname")
         setDescription("Enter a new nickname for your friend:")
@@ -22,18 +22,18 @@ class EditNicknameDialog(private val user: User?) : InputDialog() {
 
         setOnDialogShownListener {
             // only replace input if a friend nickname already exists
-            if (Stores.friendNicknames.getNickname(user?.id) != null)
-                inputLayout.editText?.setText(user?.globalName)
+            if (Stores.friendNicknames.getNickname(user.id) != null)
+                inputLayout.editText?.setText(user.globalName)
         }
 
         setOnOkListener {
             val inputName = input.trim()
 
-            if (inputName != user?.globalName) {
+            if (inputName != user.globalName) {
                 Utils.threadPool.execute {
                     val req = UpdateRelationshipRequest(inputName)
                     val res = Http.Request
-                        .newDiscordRNRequest("/users/@me/relationships/${user?.id}", "PATCH")
+                        .newDiscordRNRequest("/users/@me/relationships/${user.id}", "PATCH")
                         .executeWithJson(req)
                     // why does this not throw the usual 200 success code dieee discord
                     if (res.statusCode == 204) {
@@ -50,7 +50,7 @@ class EditNicknameDialog(private val user: User?) : InputDialog() {
                         }*/
                     } else {
                         Utils.mainThread.post {
-                            Utils.showToast("Error ${res.statusCode} while changing ${user?.username}'s nickname!", true)
+                            Utils.showToast("Error ${res.statusCode} while changing ${user.username}'s nickname!", true)
                         }
                     }
                 }

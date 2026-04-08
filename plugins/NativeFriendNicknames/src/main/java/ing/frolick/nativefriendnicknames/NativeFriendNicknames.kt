@@ -54,7 +54,7 @@ class NativeFriendNicknames : Plugin() {
 
                 val userId = dialog.argumentsOrDefault
                     .getLong("com.discord.intent.extra.EXTRA_USER_ID", 0L)
-                val user = StoreStream.Companion!!.users.getUsers(listOf(userId), false)[userId]
+                val user = StoreStream.Companion!!.users.getUsers(listOf(userId), false)[userId] ?: return@PreHook
                 // no friend = no option
                 if (!Stores.friendNicknames.data.containsKey(userId)) return@PreHook
 
