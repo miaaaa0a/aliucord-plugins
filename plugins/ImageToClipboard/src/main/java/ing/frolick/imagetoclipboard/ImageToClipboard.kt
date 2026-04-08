@@ -5,9 +5,11 @@ import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 
@@ -26,6 +28,7 @@ import com.discord.widgets.media.WidgetMedia
 import com.google.android.material.appbar.AppBarLayout
 import com.lytefast.flexinput.R
 import java.io.File
+import java.io.InputStream
 import java.net.URL
 
 @SuppressWarnings("unused")
@@ -49,6 +52,11 @@ class ImageToClipboard : Plugin() {
                     .getStringExtra("INTENT_MEDIA_URL") ?: return@Hook
                 val fileName = urlRegex.find(imageUrl, 0)?.value
                 val fileExt = fileName?.split('.')?.last()
+                var mimeType = MimeType.OTHER
+                Utils.threadPool.submit {
+                    mimeType = MimeTypeGetter.get(imageUrl)
+                }.get()
+                //logger.info("MIME TYPE: ${mimeType.type}")
 
                 //Logger().info("CHILDREN COUNT: ${actionBar.childCount}")
                 //val menuMediaGroup = actionBar.getChildAt(0) as ViewGroup
@@ -72,24 +80,19 @@ class ImageToClipboard : Plugin() {
                         Utils.threadPool.execute {
                             try {
                                 val stream = URL(imageUrl).openStream()
-                                // stuoid jpgs .
-                                val mimeType = when(fileExt) {
-                                    ".jpg" -> "image/jpeg"
-                                    else -> "image/$fileExt"
-                                }
 
                                 // context.filesDir is /data/data/com.aliucord/files, we are saving the image there
                                 // in theory it'd be better to use context.cacheDir, but discord doesn't expose that
                                 // in file_paths.xml, so it's not usable
-                                val file = File(context.filesDir, "clipboard_tmp.$fileExt")
+                                val file = File(context.filesDir, "clipboard_tmp.${mimeType.ext}")
                                 file.outputStream().use { out -> stream.copyTo(out) }
                                 val uri = FileProvider.getUriForFile(
                                     appContext,
-                                    "com.aliucord.file-provider",
+                                    "${context.packageName}.file-provider",
                                     file
                                 )
                                 val clip = ClipData(
-                                    ClipDescription("image", arrayOf(mimeType)),
+                                    ClipDescription("image", arrayOf(mimeType.type)),
                                     ClipData.Item(uri)
                                 )
                                 (appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager)
