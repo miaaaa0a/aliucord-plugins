@@ -1,12 +1,12 @@
-version = "1.1.5"
+version = "1.1.6"
 description = "a plugin that backports the friend nickname feature"
 
 aliucord {
     // Changelog of your plugin
     changelog.set(
         """
-        # 1.1.5
-        * prevent nullable user from leaking into discord's api
+        # 1.1.6
+        * don't display friend nickname in servers
         """.trimIndent(),
     )
     deploy.set(true)
