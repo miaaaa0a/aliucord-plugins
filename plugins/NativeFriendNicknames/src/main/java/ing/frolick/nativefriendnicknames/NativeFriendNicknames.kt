@@ -19,6 +19,7 @@ import com.discord.utilities.color.ColorCompat
 import b.a.a.d.a as UserActionsDialog
 import com.discord.stores.StoreStream
 import com.aliucord.Utils
+import com.aliucord.wrappers.ChannelWrapper.Companion.isDM
 
 internal class Relationship(val id: Long, val nickname: String?)
 internal class Ready(val relationships: List<Relationship>)
@@ -33,6 +34,7 @@ class NativeFriendNicknames : Plugin() {
         Stores.friendNicknames.setup()
 
         patcher.before<CoreUser>("getGlobalName") {
+            if (!StoreStream.getChannelsSelected().selectedChannel.isDM()) return@before
             val nickname = Stores.friendNicknames.getNickname(this.id) ?: this.globalName
             it.result = nickname
         }
